@@ -72,7 +72,7 @@ void nextGeneration(int (*grid)[WIDTH]) {
 }
 
 int main() {
-    cout << "Welcome to lifec, to reset the grid, press R, to escape, press ESCAPE." << endl;
+    cout << "Welcome to Conway's Game of Life\nTo reset the grid press R. To pause, press SPACE. To escape, press ESCAPE.\n";
     bool pause = 0;
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Conway's Game of Life");
     SetTargetFPS(60);
