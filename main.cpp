@@ -4,8 +4,8 @@
 #include <unistd.h>
 #include <chrono>
 #include "raylib.h"
-#define HEIGHT 50
-#define WIDTH 50
+#define HEIGHT 1000
+#define WIDTH 100
 #define SCREEN_HEIGHT 1000
 
 using namespace std;
@@ -62,7 +62,7 @@ void renderGrid(int (*grid)[WIDTH]) {
     }
 }
 
-void nextGeneration(int (*grid)[WIDTH]) {
+void nextGeneration(int (*grid)[WIDTH], int speed) {
     int newGrid[HEIGHT][WIDTH];
 
     std::copy(&grid[0][0], &grid[0][0] + HEIGHT * WIDTH, &newGrid[0][0]);
@@ -76,19 +76,37 @@ void nextGeneration(int (*grid)[WIDTH]) {
         }
     }
     std::copy(&newGrid[0][0], &newGrid[0][0] + HEIGHT * WIDTH, &grid[0][0]);
+    usleep(speed);
 }
 
 int main() {
-    srand(time(0));
-    cout << "Welcome to Conway's Game of Life\nTo clear the grid press C. To randomise the grid, press R. To pause, press SPACE. To escape, press ESCAPE.\n";
+    int speed = 100000; // 100ms in microseconds
     bool pause = 1;
+    srand(time(0));
+    cout << "Welcome to Conway's Game of Life\nTo clear the grid press C. To randomise the grid, press R. To pause, press SPACE. To increase simulation delay, press RIGHT arrow. To decrease, press LEFT arrow. To escape, press ESCAPE.\n";
     InitWindow(SCREEN_HEIGHT, SCREEN_HEIGHT, "Conway's Game of Life");
-    SetTargetFPS(30);
+    SetTargetFPS(60);
     while (!WindowShouldClose()) {
         if (IsKeyPressed(KEY_ESCAPE)) break;
-        if (IsKeyPressed(KEY_SPACE)) pause = ((pause == 1) ? 0 : 1);
+        if (IsKeyPressed(KEY_SPACE)) {
+            pause = ((pause == 1) ? 0 : 1);
+        }
         if (IsKeyPressed(KEY_C)) clearGrid(grid);
         if (IsKeyPressed(KEY_R)) randomiseGrid(grid);
+        if (IsKeyDown(KEY_RIGHT)) {
+            speed += 1000;
+            string speedString = "Simulation Delay: " + to_string(speed / 1000) + "ms";
+            char *speedChar = &speedString[0];
+            DrawRectangle(0, 0, 10 * speedString.length(), 20 + 5, Color {0, 0, 0, 150});
+            DrawText(speedChar, 0, 0, 20, RED);
+        }
+        if (IsKeyDown(KEY_LEFT)) {
+            speed = ((speed - 1000 <= 0) ? 0 : speed - 1000);
+            string speedString = "Simulation Delay: " + to_string(speed / 1000) + "ms";
+            char *speedChar = &speedString[0];
+            DrawRectangle(0, 0, 10 * speedString.length(), 20 + 5, Color {0, 0, 0, 150});
+            DrawText(speedChar, 0, 0, 20, RED);
+        };
         if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
             int x, y;
             x = GetMouseX();
@@ -98,10 +116,14 @@ int main() {
         }
 
         BeginDrawing();
-        ClearBackground(GRAY);
+        ClearBackground(WHITE);
 
-        if (!pause) nextGeneration(grid);
         renderGrid(grid);
+        if (!pause) nextGeneration(grid, speed);
+        else {
+            DrawRectangle(SCREEN_HEIGHT - 80, 0, (20 * 6) + 5, 20 + 5, Color {0, 0, 0, 150});
+            DrawText("Paused", SCREEN_HEIGHT - 75, 0, 20, RED);
+        }
         EndDrawing();
     }
 

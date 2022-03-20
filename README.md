@@ -20,5 +20,5 @@ Escape to quit
 R to reset grid 
 
 # Todo
- - [ ] Adjustable simulation speed
+ - [X] Adjustable simulation speed
  - [ ] Scrollable space (infinite grid)
