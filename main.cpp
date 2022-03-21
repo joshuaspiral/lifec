@@ -4,11 +4,12 @@
 #include <string.h>
 #include "raylib.h"
 #define SIZE 1000
-#define SCREEN_LENGTH 1000
+#define SCREEN_LENGTH 1440
 
 using namespace std;
 
 const int cellSize = SCREEN_LENGTH / SIZE;
+const float padding = cellSize * 0.08;
 int grid[SIZE * SIZE];
 
 typedef struct {
@@ -64,7 +65,7 @@ void renderGrid(int *grid) {
     for (int i = 0; i < SIZE; i++) {
         for (int j = 0; j < SIZE; j++) {
             if (grid[i * SIZE + j] == 1)
-                DrawRectangle(i * cellSize, j * cellSize, cellSize, cellSize, BLACK);
+                DrawRectangleRec(Rectangle {i * cellSize + padding, j * cellSize + padding, cellSize - padding, cellSize - padding}, BLACK);
         }
     }
 }
@@ -87,12 +88,11 @@ void nextGeneration(int *grid) {
 
 
 int main() {
-    cout << "Welcome to Conway's Game of Life\nTo clear the grid press C. To randomise the grid, press R. To pause, press SPACE. To increase simulation delay, press RIGHT arrow. To decrease, press LEFT arrow. To escape, press ESCAPE.\n";
     Camera2D camera;
     camera.offset = (Vector2){SCREEN_LENGTH / 2.0f, SCREEN_LENGTH / 2.0f};
     camera.target = (Vector2){SCREEN_LENGTH / 2.0f, SCREEN_LENGTH / 2.0f};
     camera.rotation = 0.0f;
-    camera.zoom = 10.0f;
+    camera.zoom = 10.0f; // Default zoom
 
     double speed = 0.5;
     bool pause = 1;
@@ -111,28 +111,33 @@ int main() {
         if (IsKeyPressed(KEY_ESCAPE)) break;
         if (IsKeyPressed(KEY_SPACE)) pause = ((pause == 1) ? 0 : 1);
         if (IsKeyPressed(KEY_R)) randomiseGrid(grid);
-        if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && pause) {
-            if (x >= 0 && x < SCREEN_LENGTH && y >= 0 && y < SCREEN_LENGTH)
+        if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
+            if (pause)
                 grid[(x / cellSize) * SIZE + (y / cellSize)] = ((grid[(y / cellSize) * SIZE + (x / cellSize)] == 1) ? 0 : 1);
+            else if (IsKeyDown(KEY_LEFT_CONTROL) || !pause) {
+                camera.target.x -= GetMouseDelta().x * 0.5;
+                camera.target.y -= GetMouseDelta().y * 0.5;
+            }
         }
-        else if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
-            camera.target.x -= GetMouseDelta().x * 0.5;
-            camera.target.y -= GetMouseDelta().y * 0.5;
+
+        if (IsKeyPressed(KEY_A)) camera.zoom = 2.0f;
+
+        if (GetMouseWheelMove()) {
+            if (camera.zoom + GetMouseWheelMove() > 1) {
+                camera.offset = GetMousePosition();
+                camera.zoom += GetMouseWheelMove();
+            } else {
+                camera.zoom = 1;
+            }
         }
-
-        if (IsKeyPressed(KEY_A)) camera.zoom = 1.0f;
-
-        camera.zoom += GetMouseWheelMove();
-        if (camera.zoom < 1) camera.zoom = 1;
-
 
         string speedString = "Simulation Delay: " + to_string(speed) + "s";
         char *speedChar = &speedString[0];
 
         if (IsKeyDown(KEY_RIGHT))
-            speed += 0.05;
+            speed += 0.005;
         if (IsKeyDown(KEY_LEFT))
-            speed = ((speed - 0.05 <= 0) ? 0 : speed - 0.05);
+            speed = ((speed - 0.005 <= 0) ? 0 : speed - 0.005);
 
         BeginDrawing();
         ClearBackground(WHITE);
