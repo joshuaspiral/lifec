@@ -1,129 +1,167 @@
-// Refactor code TODO 
 #include <iostream>
 #include <algorithm>
 #include <unistd.h>
-#include <chrono>
+#include <string.h>
 #include "raylib.h"
-#define HEIGHT 1000
-#define WIDTH 100
-#define SCREEN_HEIGHT 1000
+#define SIZE 1000
+#define SCREEN_LENGTH 1000
 
 using namespace std;
 
-const int cellSize = SCREEN_HEIGHT / WIDTH;
-const int padding = cellSize * 0.10;
+const int cellSize = SCREEN_LENGTH / SIZE;
+int grid[SIZE * SIZE];
 
-int grid[HEIGHT][WIDTH];
+typedef struct {
+    double StartTime;
+    double Lifetime;
+} Timer;
 
-void clearGrid(int (*grid)[WIDTH]) {
-    for (int i = 0; i < HEIGHT; i++) {
-        for (int j = 0; j < WIDTH; j++) {
-            grid[i][j] = 0;
+void StartTimer(Timer* timer, double lifetime) {
+    timer->StartTime = GetTime();
+    timer->Lifetime = lifetime;
+}
+
+bool TimerDone(Timer timer) {
+    return GetTime() - timer.StartTime >= timer.Lifetime;
+}
+
+void clearGrid(int* grid, int size) {
+    memset(grid, 0, size);
+}
+
+void randomiseGrid(int *grid) {
+    srand(time(0));
+    for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; j++) {
+            grid[i*SIZE+j] = rand() % 2;
         }
     }
 }
 
-void randomiseGrid(int (*grid)[WIDTH]) {
-    for (int i = 0; i < HEIGHT; i++) {
-        for (int j = 0; j < WIDTH; j++) {
-            grid[i][j] = rand() % 2;
-        }
-    }
-}
-
-int aliveNeighbours(int (*grid)[WIDTH], int y, int x) {
+int aliveNeighbours(int *grid, int y, int x) {
     int count = 0;
-    if (y != HEIGHT - 1) {
-        count += grid[y + 1][x];
-        if (x != WIDTH - 1) {
-            count += grid[y][x + 1];
-            count += grid[y + 1][x + 1];
+    if (y != SIZE - 1) {
+        count += grid[(y + 1) * SIZE + x];
+        if (x != SIZE - 1) {
+            count += grid[y * SIZE + x + 1];
+            count += grid[(y + 1) * SIZE + x + 1];
         }
-        count += grid[y + 1][x - 1];
+        count += grid[(y + 1) * SIZE + x - 1];
     }
 
     if (y != 0) {
-        count += grid[y - 1][x];
+        count += grid[(y - 1) * SIZE + x];
         if (x != 0) {
-            count += grid[y][x - 1];
-            count += grid[y - 1][x - 1];
+            count += grid[y * SIZE + x - 1];
+            count += grid[(y - 1) * SIZE + x - 1];
         }
-        count += grid[y - 1][x + 1];
+        count += grid[(y - 1) * SIZE + x + 1];
     }
     return count;
 }
 
-void renderGrid(int (*grid)[WIDTH]) {
-    for (int i = 0; i < HEIGHT; i++) {
-        for (int j = 0; j < WIDTH; j++) {
-            if (grid[i][j] == 1)
-                DrawRectangle(i * cellSize + padding, j * cellSize + padding, cellSize - padding, cellSize - padding, BLACK);
+void renderGrid(int *grid) {
+    for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; j++) {
+            if (grid[i * SIZE + j] == 1)
+                DrawRectangle(i * cellSize, j * cellSize, cellSize, cellSize, BLACK);
         }
     }
 }
 
-void nextGeneration(int (*grid)[WIDTH], int speed) {
-    int newGrid[HEIGHT][WIDTH];
+void nextGeneration(int *grid) {
+    int newGrid[SIZE*SIZE];
 
-    std::copy(&grid[0][0], &grid[0][0] + HEIGHT * WIDTH, &newGrid[0][0]);
-    for (int i = 0; i < HEIGHT; i++) {
-        for (int j = 0; j < WIDTH; j++) {
+    std::copy(&grid[0], &grid[0] + SIZE * SIZE, &newGrid[0]);
+    for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; j++) {
             int neighboursAlive = aliveNeighbours(grid, i, j);
-            if ((neighboursAlive > 3 || (neighboursAlive < 2)) && grid[i][j] == 1)
-                newGrid[i][j] = 0;
-            if (neighboursAlive == 3 && grid[i][j] == 0)
-                newGrid[i][j]= 1;
+            if ((neighboursAlive > 3 || (neighboursAlive < 2)) && grid[i * SIZE + j] == 1)
+                newGrid[i * SIZE + j] = 0;
+            if (neighboursAlive == 3 && grid[i * SIZE + j] == 0)
+                newGrid[i * SIZE + j]= 1;
         }
     }
-    std::copy(&newGrid[0][0], &newGrid[0][0] + HEIGHT * WIDTH, &grid[0][0]);
-    usleep(speed);
+    std::copy(&newGrid[0], &newGrid[0] + SIZE * SIZE, &grid[0]);
 }
+
 
 int main() {
-    int speed = 100000; // 100ms in microseconds
-    bool pause = 1;
-    srand(time(0));
     cout << "Welcome to Conway's Game of Life\nTo clear the grid press C. To randomise the grid, press R. To pause, press SPACE. To increase simulation delay, press RIGHT arrow. To decrease, press LEFT arrow. To escape, press ESCAPE.\n";
-    InitWindow(SCREEN_HEIGHT, SCREEN_HEIGHT, "Conway's Game of Life");
+    Camera2D camera;
+    camera.offset = (Vector2){SCREEN_LENGTH / 2.0f, SCREEN_LENGTH / 2.0f};
+    camera.target = (Vector2){SCREEN_LENGTH / 2.0f, SCREEN_LENGTH / 2.0f};
+    camera.rotation = 0.0f;
+    camera.zoom = 10.0f;
+
+    double speed = 0.5;
+    bool pause = 1;
+
+    InitWindow(SCREEN_LENGTH, SCREEN_LENGTH, "Conway's Game of Life");
     SetTargetFPS(60);
+
+    Timer speedTimer;
+    StartTimer(&speedTimer, speed);
+
     while (!WindowShouldClose()) {
+        Vector2 worldPosOrigin = GetWorldToScreen2D(Vector2{0, 0}, camera);
+        Vector2 worldPosBounds = GetWorldToScreen2D(Vector2{SCREEN_LENGTH, SCREEN_LENGTH}, camera);
+        Vector2 screenPos = GetScreenToWorld2D(GetMousePosition(), camera);
+        int x = screenPos.x;
+        int y = screenPos.y;
+
         if (IsKeyPressed(KEY_ESCAPE)) break;
-        if (IsKeyPressed(KEY_SPACE)) {
-            pause = ((pause == 1) ? 0 : 1);
-        }
-        if (IsKeyPressed(KEY_C)) clearGrid(grid);
+        if (IsKeyPressed(KEY_SPACE)) pause = ((pause == 1) ? 0 : 1);
         if (IsKeyPressed(KEY_R)) randomiseGrid(grid);
-        if (IsKeyDown(KEY_RIGHT)) {
-            speed += 1000;
-            string speedString = "Simulation Delay: " + to_string(speed / 1000) + "ms";
-            char *speedChar = &speedString[0];
-            DrawRectangle(0, 0, 10 * speedString.length(), 20 + 5, Color {0, 0, 0, 150});
-            DrawText(speedChar, 0, 0, 20, RED);
+        if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && pause) {
+            if (x >= 0 && x < SCREEN_LENGTH && y >= 0 && y < SCREEN_LENGTH)
+                grid[(x / cellSize) * SIZE + (y / cellSize)] = ((grid[(y / cellSize) * SIZE + (x / cellSize)] == 1) ? 0 : 1);
         }
-        if (IsKeyDown(KEY_LEFT)) {
-            speed = ((speed - 1000 <= 0) ? 0 : speed - 1000);
-            string speedString = "Simulation Delay: " + to_string(speed / 1000) + "ms";
-            char *speedChar = &speedString[0];
-            DrawRectangle(0, 0, 10 * speedString.length(), 20 + 5, Color {0, 0, 0, 150});
-            DrawText(speedChar, 0, 0, 20, RED);
-        };
-        if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
-            int x, y;
-            x = GetMouseX();
-            y = GetMouseY();
-            if (x < SCREEN_HEIGHT && x >= 0 && y < SCREEN_HEIGHT && y >= 0)
-                grid[x / cellSize][y / cellSize] = ((grid[y / cellSize][x / cellSize] == 1) ? 0 : 1);
+        else if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
+            camera.target.x -= GetMouseDelta().x * 0.5;
+            camera.target.y -= GetMouseDelta().y * 0.5;
         }
+
+        if (IsKeyPressed(KEY_A)) camera.zoom = 1.0f;
+
+        camera.zoom += GetMouseWheelMove();
+        if (camera.zoom < 1) camera.zoom = 1;
+
+
+        string speedString = "Simulation Delay: " + to_string(speed) + "s";
+        char *speedChar = &speedString[0];
+
+        if (IsKeyDown(KEY_RIGHT))
+            speed += 0.05;
+        if (IsKeyDown(KEY_LEFT))
+            speed = ((speed - 0.05 <= 0) ? 0 : speed - 0.05);
 
         BeginDrawing();
         ClearBackground(WHITE);
-
+        BeginMode2D(camera);
         renderGrid(grid);
-        if (!pause) nextGeneration(grid, speed);
-        else {
-            DrawRectangle(SCREEN_HEIGHT - 80, 0, (20 * 6) + 5, 20 + 5, Color {0, 0, 0, 150});
-            DrawText("Paused", SCREEN_HEIGHT - 75, 0, 20, RED);
+        EndMode2D();
+
+        if (IsKeyDown(KEY_C)) {
+            clearGrid(grid, SIZE * SIZE * sizeof(int));
+            DrawText("Cleared", SCREEN_LENGTH / 2 - (8*10), 0, 20, BLACK);
         }
+
+        if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_RIGHT)) {
+            DrawRectangle(0, 0, 10 * speedString.length(), 20 + 5, Color {0, 0, 0, 255});
+            DrawText(speedChar, 0, 0, 20, WHITE);
+        }
+
+        if (!pause && TimerDone(speedTimer)) {
+            nextGeneration(grid);
+            StartTimer(&speedTimer, speed);
+        }
+        if (pause) {
+            DrawRectangle(SCREEN_LENGTH - 80, 0, (20 * 6) + 5, 20 + 5, Color {0, 0, 0, 255});
+            DrawText("Paused", SCREEN_LENGTH - 75, 0, 20, WHITE);
+        }
+
+        DrawFPS(0, 0);
         EndDrawing();
     }
 
