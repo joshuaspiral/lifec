@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <unistd.h>
 #include <string.h>
+#include <stack>
 #include "raylib.h"
 #define SIZE 1000
 #define SCREEN_LENGTH 1440
@@ -92,10 +93,12 @@ int main() {
     camera.offset = (Vector2){SCREEN_LENGTH / 2.0f, SCREEN_LENGTH / 2.0f};
     camera.target = (Vector2){SCREEN_LENGTH / 2.0f, SCREEN_LENGTH / 2.0f};
     camera.rotation = 0.0f;
-    camera.zoom = 10.0f; // Default zoom
+    camera.zoom = 20.0f; // Default zoom
 
     double speed = 0.5;
     bool pause = 1;
+
+    stack<Vector2> lastMoves;
 
     InitWindow(SCREEN_LENGTH, SCREEN_LENGTH, "Conway's Game of Life");
     SetTargetFPS(60);
@@ -103,31 +106,41 @@ int main() {
     Timer speedTimer;
     StartTimer(&speedTimer, speed);
 
+
     while (!WindowShouldClose()) {
         Vector2 screenPos = GetScreenToWorld2D(GetMousePosition(), camera);
         int x = screenPos.x;
         int y = screenPos.y;
+        int boardY = x / cellSize;
+        int boardX = y / cellSize;
 
-        if (IsKeyPressed(KEY_ESCAPE)) break;
+        if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_Q)) break;
         if (IsKeyPressed(KEY_SPACE)) pause = ((pause == 1) ? 0 : 1);
         if (IsKeyPressed(KEY_R)) randomiseGrid(grid);
-        if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
-            if (pause)
-                grid[(x / cellSize) * SIZE + (y / cellSize)] = ((grid[(y / cellSize) * SIZE + (x / cellSize)] == 1) ? 0 : 1);
-            else if (IsKeyDown(KEY_LEFT_CONTROL) || !pause) {
-                camera.target.x -= GetMouseDelta().x * 0.5;
-                camera.target.y -= GetMouseDelta().y * 0.5;
+        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+            if (pause) {
+                grid[boardY * SIZE + boardX] = ((grid[boardY * SIZE + boardX] == 1) ? 0 : 1);
+                lastMoves.push(Vector2 {(float)boardX, (float)boardY});
+            } else {
+                    camera.target.x -= GetMouseDelta().x * 0.5;
+                    camera.target.y -= GetMouseDelta().y * 0.5;
             }
         }
+        if (IsKeyDown(KEY_Z) && !lastMoves.empty()) {
+            Vector2 lastMove = lastMoves.top();
+            grid[(int)(lastMove.y * SIZE + lastMove.x)] = ((grid[(int)(lastMove.y * SIZE + lastMove.x)] == 1) ? 0 : 1);
+            lastMoves.pop();
+        }
 
-        if (IsKeyPressed(KEY_A)) camera.zoom = 2.0f;
+        if (IsKeyPressed(KEY_A)) camera.zoom = 1.0f;
+            
 
         if (GetMouseWheelMove()) {
             if (camera.zoom + GetMouseWheelMove() > 1) {
                 camera.offset = GetMousePosition();
                 camera.zoom += GetMouseWheelMove();
             } else {
-                camera.zoom = 1;
+                camera.zoom = 2;
             }
         }
 
