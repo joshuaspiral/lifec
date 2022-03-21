@@ -1,11 +1,9 @@
 # Conway's Game of Life in C++
 
-# Details
-I originally intended to be written in C but I decided to switch midway. The library used is [raylib](https://raylib.com).
-
 # Dependencies
 [raylib](https://raylib.com)
-OpenGL
+on Arch Linux
+`sudo pacman -S raylib`
 
 # Quickstart
 
@@ -15,10 +13,14 @@ $ ./lifec
 ```
 
 # Controls
-Space to pause  
+Space to pause and unpause (when paused, left mouse button is draw, otherwise, it is to move around the grid)
 Escape to quit  
-R to reset grid 
+R to randomise grid
+C to clear grid
+A to reset zoom
+Scroll to zoom
 
 # Todo
  - [X] Adjustable simulation speed
  - [ ] Scrollable space (infinite grid)
+ - [ ] Optimisations (only render squares in view)

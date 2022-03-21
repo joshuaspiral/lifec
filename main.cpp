@@ -104,8 +104,6 @@ int main() {
     StartTimer(&speedTimer, speed);
 
     while (!WindowShouldClose()) {
-        Vector2 worldPosOrigin = GetWorldToScreen2D(Vector2{0, 0}, camera);
-        Vector2 worldPosBounds = GetWorldToScreen2D(Vector2{SCREEN_LENGTH, SCREEN_LENGTH}, camera);
         Vector2 screenPos = GetScreenToWorld2D(GetMousePosition(), camera);
         int x = screenPos.x;
         int y = screenPos.y;
@@ -161,7 +159,6 @@ int main() {
             DrawText("Paused", SCREEN_LENGTH - 75, 0, 20, WHITE);
         }
 
-        DrawFPS(0, 0);
         EndDrawing();
     }
 
