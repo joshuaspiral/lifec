@@ -25,4 +25,5 @@ Scroll to zoom
  - [X] Adjustable simulation speed
  - [X] Scrollable space 
  - [ ] Infinite grid
- - [ ] Optimisations (only render squares in view)
+ - [X] Only render squares in view)
+ - [ ] Refactor

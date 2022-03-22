@@ -62,9 +62,9 @@ int aliveNeighbours(int *grid, int y, int x) {
     return count;
 }
 
-void renderGrid(int *grid) {
-    for (int i = 0; i < SIZE; i++) {
-        for (int j = 0; j < SIZE; j++) {
+void renderGrid(int *grid, int originX, int originY, int boundaryX, int boundaryY) {
+    for (int i = originX; i < boundaryX; i++) {
+        for (int j = originY; j < boundaryY; j++) {
             if (grid[i * SIZE + j] == 1)
                 DrawRectangleRec(Rectangle {i * cellSize + padding, j * cellSize + padding, cellSize - padding, cellSize - padding}, BLACK);
         }
@@ -87,6 +87,15 @@ void nextGeneration(int *grid) {
     std::copy(&newGrid[0], &newGrid[0] + SIZE * SIZE, &grid[0]);
 }
 
+int inBounds(int n) {
+    if (n >= SIZE)
+        return SIZE;
+    else if (n < 0)
+        return 0;
+    else
+        return n;
+}
+
 
 int main() {
     Camera2D camera;
@@ -101,7 +110,7 @@ int main() {
     stack<Vector2> lastMoves;
 
     InitWindow(SCREEN_LENGTH, SCREEN_LENGTH, "Conway's Game of Life");
-    SetTargetFPS(60);
+    SetTargetFPS(1000);
 
     Timer speedTimer;
     StartTimer(&speedTimer, speed);
@@ -113,6 +122,12 @@ int main() {
         int y = screenPos.y;
         int boardY = x / cellSize;
         int boardX = y / cellSize;
+        Vector2 origin = GetScreenToWorld2D(Vector2 {0,0}, camera);
+        int originX = inBounds(origin.x / cellSize);
+        int originY = inBounds(origin.y / cellSize);
+        Vector2 boundary = GetScreenToWorld2D(Vector2 {SCREEN_LENGTH, SCREEN_LENGTH}, camera);
+        int boundaryX = inBounds(boundary.x / cellSize);
+        int boundaryY = inBounds(boundary.y / cellSize);
 
         if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_Q)) break;
         if (IsKeyPressed(KEY_SPACE)) pause = ((pause == 1) ? 0 : 1);
@@ -122,8 +137,10 @@ int main() {
                 grid[boardY * SIZE + boardX] = ((grid[boardY * SIZE + boardX] == 1) ? 0 : 1);
                 lastMoves.push(Vector2 {(float)boardX, (float)boardY});
             } else {
-                    camera.target.x -= GetMouseDelta().x * 0.5;
-                    camera.target.y -= GetMouseDelta().y * 0.5;
+                if (camera.offset.x + GetMouseDelta().x > 0)
+                    camera.offset.x += GetMouseDelta().x * 0.5;
+                if (camera.offset.y + GetMouseDelta().y > 0)
+                    camera.offset.y += GetMouseDelta().y * 0.5;
             }
         }
         if (IsKeyDown(KEY_Z) && !lastMoves.empty()) {
@@ -132,7 +149,7 @@ int main() {
             lastMoves.pop();
         }
 
-        if (IsKeyPressed(KEY_A)) camera.zoom = 1.0f;
+        if (IsKeyPressed(KEY_A)) camera.zoom = 5.0f;
             
 
         if (GetMouseWheelMove()) {
@@ -140,7 +157,7 @@ int main() {
                 camera.offset = GetMousePosition();
                 camera.zoom += GetMouseWheelMove();
             } else {
-                camera.zoom = 2;
+                camera.zoom = 1;
             }
         }
 
@@ -155,7 +172,7 @@ int main() {
         BeginDrawing();
         ClearBackground(WHITE);
         BeginMode2D(camera);
-        renderGrid(grid);
+        renderGrid(grid, originX, originY, boundaryX, boundaryY);
         EndMode2D();
 
         if (IsKeyDown(KEY_C)) {
@@ -176,6 +193,7 @@ int main() {
             DrawRectangle(SCREEN_LENGTH - 80, 0, (20 * 6) + 5, 20 + 5, Color {0, 0, 0, 255});
             DrawText("Paused", SCREEN_LENGTH - 75, 0, 20, WHITE);
         }
+        DrawFPS(10, 20);
 
         EndDrawing();
     }
