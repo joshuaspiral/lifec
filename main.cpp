@@ -1,9 +1,9 @@
-#include <iostream>
-#include <algorithm>
-#include <unistd.h>
-#include <string.h>
-#include <stack>
 #include "raylib.h"
+#include <algorithm>
+#include <iostream>
+#include <stack>
+#include <string.h>
+#include <unistd.h>
 #define SIZE 1000
 #define SCREEN_LENGTH 1440
 
@@ -18,7 +18,7 @@ typedef struct {
     double Lifetime;
 } Timer;
 
-void StartTimer(Timer* timer, double lifetime) {
+void StartTimer(Timer *timer, double lifetime) {
     timer->StartTime = GetTime();
     timer->Lifetime = lifetime;
 }
@@ -27,15 +27,13 @@ bool TimerDone(Timer timer) {
     return GetTime() - timer.StartTime >= timer.Lifetime;
 }
 
-void clearGrid(int* grid, int size) {
-    memset(grid, 0, size);
-}
+void clearGrid(int *grid, int size) { memset(grid, 0, size); }
 
 void randomiseGrid(int *grid) {
     srand(time(0));
     for (int i = 0; i < SIZE; i++) {
         for (int j = 0; j < SIZE; j++) {
-            grid[i*SIZE+j] = rand() % 2;
+            grid[i * SIZE + j] = rand() % 2;
         }
     }
 }
@@ -62,26 +60,31 @@ int aliveNeighbours(int *grid, int y, int x) {
     return count;
 }
 
-void renderGrid(int *grid, int originX, int originY, int boundaryX, int boundaryY) {
+void renderGrid(int *grid, int originX, int originY, int boundaryX,
+        int boundaryY) {
     for (int i = originX; i < boundaryX; i++) {
         for (int j = originY; j < boundaryY; j++) {
             if (grid[i * SIZE + j] == 1)
-                DrawRectangleRec(Rectangle {i * cellSize + padding, j * cellSize + padding, cellSize - padding, cellSize - padding}, BLACK);
+                DrawRectangleRec(Rectangle{i * cellSize + padding,
+                        j * cellSize + padding, cellSize - padding,
+                        cellSize - padding},
+                        BLACK);
         }
     }
 }
 
 void nextGeneration(int *grid) {
-    int newGrid[SIZE*SIZE];
+    int newGrid[SIZE * SIZE];
 
     std::copy(&grid[0], &grid[0] + SIZE * SIZE, &newGrid[0]);
     for (int i = 0; i < SIZE; i++) {
         for (int j = 0; j < SIZE; j++) {
             int neighboursAlive = aliveNeighbours(grid, i, j);
-            if ((neighboursAlive > 3 || (neighboursAlive < 2)) && grid[i * SIZE + j] == 1)
+            if ((neighboursAlive > 3 || (neighboursAlive < 2)) &&
+                    grid[i * SIZE + j] == 1)
                 newGrid[i * SIZE + j] = 0;
             if (neighboursAlive == 3 && grid[i * SIZE + j] == 0)
-                newGrid[i * SIZE + j]= 1;
+                newGrid[i * SIZE + j] = 1;
         }
     }
     std::copy(&newGrid[0], &newGrid[0] + SIZE * SIZE, &grid[0]);
@@ -95,7 +98,6 @@ int inBounds(int n) {
     else
         return n;
 }
-
 
 int main() {
     Camera2D camera;
@@ -115,27 +117,31 @@ int main() {
     Timer speedTimer;
     StartTimer(&speedTimer, speed);
 
-
     while (!WindowShouldClose()) {
         Vector2 screenPos = GetScreenToWorld2D(GetMousePosition(), camera);
         int x = screenPos.x;
         int y = screenPos.y;
         int boardY = x / cellSize;
         int boardX = y / cellSize;
-        Vector2 origin = GetScreenToWorld2D(Vector2 {0,0}, camera);
+        Vector2 origin = GetScreenToWorld2D(Vector2{0, 0}, camera);
         int originX = inBounds(origin.x / cellSize);
         int originY = inBounds(origin.y / cellSize);
-        Vector2 boundary = GetScreenToWorld2D(Vector2 {SCREEN_LENGTH, SCREEN_LENGTH}, camera);
+        Vector2 boundary =
+            GetScreenToWorld2D(Vector2{SCREEN_LENGTH, SCREEN_LENGTH}, camera);
         int boundaryX = inBounds(boundary.x / cellSize);
         int boundaryY = inBounds(boundary.y / cellSize);
 
-        if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_Q)) break;
-        if (IsKeyPressed(KEY_SPACE)) pause = ((pause == 1) ? 0 : 1);
-        if (IsKeyPressed(KEY_R)) randomiseGrid(grid);
+        if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_Q))
+            break;
+        if (IsKeyPressed(KEY_SPACE))
+            pause = ((pause == 1) ? 0 : 1);
+        if (IsKeyPressed(KEY_R))
+            randomiseGrid(grid);
         if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
             if (pause) {
-                grid[boardY * SIZE + boardX] = ((grid[boardY * SIZE + boardX] == 1) ? 0 : 1);
-                lastMoves.push(Vector2 {(float)boardX, (float)boardY});
+                grid[boardY * SIZE + boardX] =
+                    ((grid[boardY * SIZE + boardX] == 1) ? 0 : 1);
+                lastMoves.push(Vector2{(float)boardX, (float)boardY});
             } else {
                 if (camera.offset.x + GetMouseDelta().x > 0)
                     camera.offset.x += GetMouseDelta().x * 0.5;
@@ -145,12 +151,13 @@ int main() {
         }
         if (IsKeyDown(KEY_Z) && !lastMoves.empty()) {
             Vector2 lastMove = lastMoves.top();
-            grid[(int)(lastMove.y * SIZE + lastMove.x)] = ((grid[(int)(lastMove.y * SIZE + lastMove.x)] == 1) ? 0 : 1);
+            grid[(int)(lastMove.y * SIZE + lastMove.x)] =
+                ((grid[(int)(lastMove.y * SIZE + lastMove.x)] == 1) ? 0 : 1);
             lastMoves.pop();
         }
 
-        if (IsKeyPressed(KEY_A)) camera.zoom = 5.0f;
-            
+        if (IsKeyPressed(KEY_A))
+            camera.zoom = 5.0f;
 
         if (GetMouseWheelMove()) {
             if (camera.zoom + GetMouseWheelMove() > 1) {
@@ -177,11 +184,12 @@ int main() {
 
         if (IsKeyDown(KEY_C)) {
             clearGrid(grid, SIZE * SIZE * sizeof(int));
-            DrawText("Cleared", SCREEN_LENGTH / 2 - (8*10), 0, 20, BLACK);
+            DrawText("Cleared", SCREEN_LENGTH / 2 - (8 * 10), 0, 20, BLACK);
         }
 
         if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_RIGHT)) {
-            DrawRectangle(0, 0, 10 * speedString.length(), 20 + 5, Color {0, 0, 0, 255});
+            DrawRectangle(0, 0, 10 * speedString.length(), 20 + 5,
+                    Color{0, 0, 0, 255});
             DrawText(speedChar, 0, 0, 20, WHITE);
         }
 
@@ -190,7 +198,8 @@ int main() {
             StartTimer(&speedTimer, speed);
         }
         if (pause) {
-            DrawRectangle(SCREEN_LENGTH - 80, 0, (20 * 6) + 5, 20 + 5, Color {0, 0, 0, 255});
+            DrawRectangle(SCREEN_LENGTH - 80, 0, (20 * 6) + 5, 20 + 5,
+                    Color{0, 0, 0, 255});
             DrawText("Paused", SCREEN_LENGTH - 75, 0, 20, WHITE);
         }
 
@@ -198,7 +207,6 @@ int main() {
     }
 
     CloseWindow();
-
 
     return 0;
 }
