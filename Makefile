@@ -1,6 +1,5 @@
 CXX=clang++
-CXXFLAGS=-Wall -Wextra -ggdb -O3 -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
-
+CXXFLAGS=-Wall -Wextra -ggdb -O3 -lraylib
 make all: main.cpp
 	$(CXX) $(CXXFLAGS) -o lifec main.cpp -lm
 

@@ -1,9 +1,7 @@
 #include "raylib.h"
-#include <algorithm>
 #include <iostream>
 #include <stack>
 #include <string.h>
-#include <unistd.h>
 #define SIZE 1000
 #define SCREEN_LENGTH 1440
 
@@ -106,10 +104,10 @@ int main() {
     camera.rotation = 0.0f;
     camera.zoom = 20.0f; // Default zoom
 
-    double speed = 0.5;
+    double speed = 0.25;
     bool pause = 1;
 
-    stack<Vector2> lastMoves;
+    stack<int> lastMoves;
 
     InitWindow(SCREEN_LENGTH, SCREEN_LENGTH, "Conway's Game of Life");
     SetTargetFPS(1000);
@@ -139,32 +137,52 @@ int main() {
             randomiseGrid(grid);
         if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
             if (pause) {
-                grid[boardY * SIZE + boardX] =
-                    ((grid[boardY * SIZE + boardX] == 1) ? 0 : 1);
-                lastMoves.push(Vector2{(float)boardX, (float)boardY});
+                int index = boardY * SIZE + boardX;
+                if (index > 0 || index <= SIZE * SIZE) {
+                    grid[boardY * SIZE + boardX] =
+                        ((grid[boardY * SIZE + boardX] == 1) ? 0 : 1);
+                    lastMoves.push(index);
+                }
             } else {
-                if (camera.offset.x + GetMouseDelta().x > 0)
-                    camera.offset.x += GetMouseDelta().x * 0.5;
-                if (camera.offset.y + GetMouseDelta().y > 0)
-                    camera.offset.y += GetMouseDelta().y * 0.5;
+                int newX = camera.offset.x + GetMouseDelta().x * 0.5;
+                int newY = camera.offset.y + GetMouseDelta().y * 0.5;
+                if (newX >= 0 && newX <= SIZE)
+                    camera.offset.x = newX;
+                if (newY >= 0 && newY <= SIZE)
+                    camera.offset.y = newY;
             }
         }
+
+        if (IsKeyDown(KEY_H)) if (camera.offset.x + 1 > 0) camera.offset.x++;
+        if (IsKeyDown(KEY_J)) if (camera.offset.y - 1 > 0) camera.offset.y--;
+        if (IsKeyDown(KEY_K)) if (camera.offset.y + 1 > 0) camera.offset.y++;
+        if (IsKeyDown(KEY_L)) if (camera.offset.x - 1 > 0) camera.offset.x--;
+        
         if (IsKeyDown(KEY_Z) && !lastMoves.empty()) {
-            Vector2 lastMove = lastMoves.top();
-            grid[(int)(lastMove.y * SIZE + lastMove.x)] =
-                ((grid[(int)(lastMove.y * SIZE + lastMove.x)] == 1) ? 0 : 1);
+            int lastMove = lastMoves.top();
+            grid[lastMove] = (grid[lastMove] == 1) ? 0 : 1;
             lastMoves.pop();
         }
 
         if (IsKeyPressed(KEY_A))
             camera.zoom = 5.0f;
 
-        if (GetMouseWheelMove()) {
-            if (camera.zoom + GetMouseWheelMove() > 1) {
-                camera.offset = GetMousePosition();
-                camera.zoom += GetMouseWheelMove();
-            } else {
-                camera.zoom = 1;
+        if (GetMouseWheelMove() || IsKeyDown(KEY_MINUS) || IsKeyDown(KEY_EQUAL)) {
+            if (GetMouseWheelMove()) {
+                if (camera.zoom + GetMouseWheelMove() >= 1) {
+                    camera.offset = GetMousePosition();
+                    camera.zoom += GetMouseWheelMove() * camera.zoom;
+                } else {
+                    camera.zoom = 1;
+                }
+            }
+            if (IsKeyDown(KEY_EQUAL)) {
+                if (camera.zoom + 0.02 * camera.zoom <= SIZE)
+                    camera.zoom += 0.02 * camera.zoom;
+            }
+            if (IsKeyDown(KEY_MINUS)) {
+                if (camera.zoom - 0.02 * camera.zoom >= 1)
+                    camera.zoom -= 0.02 * camera.zoom;
             }
         }
 
@@ -172,9 +190,9 @@ int main() {
         char *speedChar = &speedString[0];
 
         if (IsKeyPressed(KEY_RIGHT))
-            speed += 0.1;
+            speed += 0.025;
         if (IsKeyPressed(KEY_LEFT))
-            speed = ((speed - 0.1 <= 0) ? 0 : speed - 0.1);
+            speed = ((speed - 0.025 <= 0) ? 0 : speed - 0.025);
 
         BeginDrawing();
         ClearBackground(WHITE);
