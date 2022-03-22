@@ -193,7 +193,6 @@ int main() {
             DrawRectangle(SCREEN_LENGTH - 80, 0, (20 * 6) + 5, 20 + 5, Color {0, 0, 0, 255});
             DrawText("Paused", SCREEN_LENGTH - 75, 0, 20, WHITE);
         }
-        DrawFPS(10, 20);
 
         EndDrawing();
     }
