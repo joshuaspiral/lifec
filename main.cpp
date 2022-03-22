@@ -164,10 +164,10 @@ int main() {
         string speedString = "Simulation Delay: " + to_string(speed) + "s";
         char *speedChar = &speedString[0];
 
-        if (IsKeyDown(KEY_RIGHT))
-            speed += 0.005;
-        if (IsKeyDown(KEY_LEFT))
-            speed = ((speed - 0.005 <= 0) ? 0 : speed - 0.005);
+        if (IsKeyPressed(KEY_RIGHT))
+            speed += 0.1;
+        if (IsKeyPressed(KEY_LEFT))
+            speed = ((speed - 0.1 <= 0) ? 0 : speed - 0.1);
 
         BeginDrawing();
         ClearBackground(WHITE);
