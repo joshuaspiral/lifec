@@ -2,14 +2,14 @@
 #include <iostream>
 #include <stack>
 #include <string.h>
-#define SIZE 1000
-#define SCREEN_LENGTH 1440
+#define SIZE 800
+#define SCREEN_LENGTH 800
 
 using namespace std;
 
 const int cellSize = SCREEN_LENGTH / SIZE;
 const float padding = cellSize * 0.08;
-int grid[SIZE * SIZE];
+bool grid[SIZE * SIZE];
 
 typedef struct {
     double StartTime;
@@ -25,9 +25,9 @@ bool TimerDone(Timer timer) {
     return GetTime() - timer.StartTime >= timer.Lifetime;
 }
 
-void clearGrid(int *grid, int size) { memset(grid, 0, size); }
+void clearGrid(bool *grid, int size) { memset(grid, 0, size); }
 
-void randomiseGrid(int *grid) {
+void randomiseGrid(bool *grid) {
     srand(time(0));
     for (int i = 0; i < SIZE; i++) {
         for (int j = 0; j < SIZE; j++) {
@@ -36,7 +36,7 @@ void randomiseGrid(int *grid) {
     }
 }
 
-int aliveNeighbours(int *grid, int y, int x) {
+int aliveNeighbours(bool *grid, int y, int x) {
     int count = 0;
     if (y != SIZE - 1) {
         count += grid[(y + 1) * SIZE + x];
@@ -58,7 +58,7 @@ int aliveNeighbours(int *grid, int y, int x) {
     return count;
 }
 
-void renderGrid(int *grid, int originX, int originY, int boundaryX,
+void renderGrid(bool *grid, int originX, int originY, int boundaryX,
         int boundaryY) {
     for (int i = originX; i < boundaryX; i++) {
         for (int j = originY; j < boundaryY; j++) {
@@ -71,8 +71,8 @@ void renderGrid(int *grid, int originX, int originY, int boundaryX,
     }
 }
 
-void nextGeneration(int *grid) {
-    int newGrid[SIZE * SIZE];
+void nextGeneration(bool *grid) {
+    bool newGrid[SIZE * SIZE];
 
     std::copy(&grid[0], &grid[0] + SIZE * SIZE, &newGrid[0]);
     for (int i = 0; i < SIZE; i++) {
